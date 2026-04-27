@@ -21,7 +21,7 @@ Add as a path dependency from another CPC server crate:
 
 ```toml
 [dependencies]
-vision-core = { git = "https://github.com/josephwander-arch/vision-core", tag = "v0.1.0" }
+vision-core = { git = "https://github.com/AIWander/vision-core", tag = "v0.1.0" }
 ```
 
 ```rust

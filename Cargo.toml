@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "OCR and image analysis library for CPC servers (Windows OCR + template matching)"
-repository = "https://github.com/josephwander-arch/vision-core"
+repository = "https://github.com/AIWander/vision-core"
 readme = "README.md"
 
 [lib]
