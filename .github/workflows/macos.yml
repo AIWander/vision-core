@@ -1,0 +1,24 @@
+name: macOS Build
+
+# Verifies vision-core compiles on Apple Silicon. The default build (no features)
+# now works cross-platform: screenshot capture via the `screenshots` crate, and
+# OCR falls back to a stub off-Windows (use --features onnx for real OCR on macOS).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-arm64:
+    name: cargo check (aarch64-apple-darwin)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - run: cargo check --target aarch64-apple-darwin
