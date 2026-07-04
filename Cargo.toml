@@ -1,9 +1,9 @@
 [package]
 name = "vision-core"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "OCR and image analysis library for CPC servers (Windows OCR + template matching; experimental PaddleOCR-ONNX backend)"
+description = "Cross-platform screenshot + OCR + image analysis for CPC servers. Screenshot capture works on Windows/macOS/Linux; OCR via Windows.Media.Ocr on Windows or the ONNX/Paddle backend (--features onnx) elsewhere."
 repository = "https://github.com/AIWander/vision-core"
 readme = "README.md"
 
@@ -21,15 +21,8 @@ onnx = ["dep:ort", "dep:ndarray"]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
-screenshots = "0.8"
+screenshots = "0.8"   # cross-platform screen capture (Windows/macOS/Linux)
 image = "0.24"
-windows = { version = "0.58", features = [
-    "Media_Ocr",
-    "Graphics_Imaging",
-    "Storage_Streams",
-    "Foundation",
-    "Foundation_Collections",
-] }
 reqwest = { version = "0.12", features = ["json"] }
 base64 = "0.22"
 chrono = "0.4"
@@ -45,3 +38,15 @@ ort = { version = "=2.0.0-rc.12", optional = true, features = ["download-binarie
 # that version so Tensor::from_array / try_extract_array unify on one ndarray
 # crate. (Spec suggested 0.16 — bumped to 0.17 to match ort. See CHANGELOG.)
 ndarray = { version = "0.17", optional = true }
+
+# Windows.Media.Ocr backend — Windows-only. Gated here so macOS/Linux builds
+# don't try to pull the `windows` crate. The OCR dispatch falls back to the
+# ONNX/Paddle backend off-Windows (see selected_backend in lib.rs).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Media_Ocr",
+    "Graphics_Imaging",
+    "Storage_Streams",
+    "Foundation",
+    "Foundation_Collections",
+] }

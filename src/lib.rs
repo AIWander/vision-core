@@ -6,8 +6,13 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use serde_json::{json, Value};
 use std::path::Path;
+// Windows.Media.Ocr backend — Windows-only. Screenshot capture (the `screenshots`
+// crate, below) is cross-platform and works on macOS/Linux without these.
+#[cfg(windows)]
 use windows::Graphics::Imaging::BitmapDecoder;
+#[cfg(windows)]
 use windows::Media::Ocr::OcrEngine;
+#[cfg(windows)]
 use windows::Storage::Streams::{DataWriter, InMemoryRandomAccessStream};
 
 // Experimental cross-platform OCR backend. Entirely behind the `onnx` feature so
@@ -37,7 +42,20 @@ const PADDLE_NOT_COMPILED: &str = "VISION_CORE_OCR_BACKEND=paddle requested but 
 fn selected_backend() -> OcrBackend {
     match std::env::var("VISION_CORE_OCR_BACKEND").as_deref() {
         Ok("paddle") | Ok("onnx") | Ok("paddleocr") => OcrBackend::Paddle,
-        _ => OcrBackend::Windows,
+        Ok("windows") => OcrBackend::Windows,
+        _ => {
+            // Default: Windows.Media.Ocr on Windows; the ONNX/Paddle backend
+            // elsewhere (Windows OCR doesn't exist off-Windows). On macOS/Linux,
+            // OCR therefore needs `--features onnx`; screenshots work regardless.
+            #[cfg(windows)]
+            {
+                OcrBackend::Windows
+            }
+            #[cfg(not(windows))]
+            {
+                OcrBackend::Paddle
+            }
+        }
     }
 }
 
@@ -328,8 +346,19 @@ pub async fn ocr_image(image_path: &str, language: &str) -> Result<String, Strin
     }
 }
 
+/// Non-Windows stub: Windows.Media.Ocr is unavailable off-Windows. Screenshot
+/// capture still works; for OCR on macOS/Linux build with `--features onnx`
+/// (sets the default backend to ONNX/Paddle) or set VISION_CORE_OCR_BACKEND=paddle.
+#[cfg(not(windows))]
+async fn windows_ocr_image(_image_path: &str, _language: &str) -> Result<String, String> {
+    Err("Windows.Media.Ocr is unavailable on this platform. Build vision-core with \
+         `--features onnx` for cross-platform OCR, or use screenshot capture only."
+        .to_string())
+}
+
 /// Windows.Media.Ocr text extraction (default backend). Body moved verbatim
 /// from the previous public `ocr_image`; behavior is unchanged.
+#[cfg(windows)]
 async fn windows_ocr_image(image_path: &str, _language: &str) -> Result<String, String> {
     let path = std::path::Path::new(image_path);
     if !path.exists() {
@@ -406,8 +435,19 @@ pub async fn ocr_image_with_positions(
     }
 }
 
+/// Non-Windows stub for word-box OCR (see `windows_ocr_image` stub above).
+#[cfg(not(windows))]
+async fn windows_ocr_image_with_positions(
+    _image_path: &str,
+) -> Result<Vec<(String, f64, f64, f64, f64)>, String> {
+    Err("Windows.Media.Ocr is unavailable on this platform. Build vision-core with \
+         `--features onnx` for cross-platform OCR, or use screenshot capture only."
+        .to_string())
+}
+
 /// Windows.Media.Ocr word-box extraction (default backend). Body moved verbatim
 /// from the previous public `ocr_image_with_positions`; behavior is unchanged.
+#[cfg(windows)]
 async fn windows_ocr_image_with_positions(
     image_path: &str,
 ) -> Result<Vec<(String, f64, f64, f64, f64)>, String> {
